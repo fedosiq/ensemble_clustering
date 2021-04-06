@@ -2,12 +2,12 @@ import numpy as np
 from sklearn.cluster import AgglomerativeClustering
 
 
-def getAllSegs(base_clusterings: np.array):
+def get_all_segs(base_clusterings: np.array):
     N, n_base_clusterings = base_clusterings.shape
     n_clusters_orig = np.max(base_clusterings, axis=0) + 1
-    C = np.cumsum(n_clusters_orig)  # may be different axes
+    C = np.cumsum(n_clusters_orig)
     zero = np.zeros(1)
-    bcs = base_clusterings + np.concatenate((zero, C[:-1]))  # ???
+    bcs = base_clusterings + np.concatenate((zero, C[:-1]))
 
     n_clusters = n_clusters_orig[-1] + C[-2]
     base_clusterings_segments = np.zeros((n_clusters, N))
@@ -82,7 +82,7 @@ if __name__ == '__main__':
         [0, 0, 0, 0, 1, 1, 0, 1, 2, 2, 2, 2, 2, 2, 2, 2],
         [0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2]
     ]).T
-    bcs, segments = getAllSegs(base_clusterings)
+    bcs, segments = get_all_segs(base_clusterings)
     print(bcs)
     print(segments)
     ECI = compute_ECI(bcs, segments)
