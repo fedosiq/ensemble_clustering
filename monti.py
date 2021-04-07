@@ -46,7 +46,8 @@ class ConsensusCluster:
           * proportion -> percentage to sample
         """
         resampled_indices = np.random.choice(
-            range(data.shape[0]), size=int(data.shape[0]*proportion), replace=False)
+            range(data.shape[0]), size=int(data.shape[0] * proportion), replace=False
+        )
         return resampled_indices, data[resampled_indices, :]
 
     def fit(self, data, verbose=False):
@@ -56,10 +57,11 @@ class ConsensusCluster:
           * data -> (examples,attributes) format
           * verbose -> should print or not
         """
-        Mk = np.zeros((self.K_-self.L_, data.shape[0], data.shape[0]))
-        Is = np.zeros((data.shape[0],)*2)
+        N = data.shape[0]  # number of points
+        Mk = np.zeros((self.K_ - self.L_, N, N))
+        Is = np.zeros((N, N))  # counter for each pair of points if they were used in resample data for current number of clusters
         for k in range(self.L_, self.K_):  # for each number of clusters
-            i_ = k-self.L_
+            i_ = k - self.L_
             if verbose:
                 print("At k = %d, aka. iteration = %d" % (k, i_))
             for h in range(self.H_):  # resample H times
@@ -71,36 +73,38 @@ class ConsensusCluster:
                 # find indexes of elements from same clusters with bisection
                 # on sorted array => this is more efficient than brute force search
                 id_clusts = np.argsort(Mh)
-                sorted_ = Mh[id_clusts]
+                sorted_ = Mh[id_clusts]  # 0000000000111111111111222222
                 for i in range(k):  # for each cluster
                     ia = bisect.bisect_left(sorted_, i)
                     ib = bisect.bisect_right(sorted_, i)
-                    is_ = id_clusts[ia:ib]
-                    ids_ = np.array(list(combinations(is_, 2))).T
+                    cluster_indices = id_clusts[ia:ib]
+                    is_ = resampled_indices[cluster_indices]
+                    ids_ = np.array(list(combinations(is_, 2))).T  # get all pairs of i-th cluster
                     # sometimes only one element is in a cluster (no combinations)
                     if ids_.size != 0:
                         Mk[i_, ids_[0], ids_[1]] += 1
                 # increment counts
                 ids_2 = np.array(list(combinations(resampled_indices, 2))).T
                 Is[ids_2[0], ids_2[1]] += 1
-            Mk[i_] /= Is+1e-8  # consensus matrix
-            # Mk[i_] is upper triangular (with zeros on diagonal), we now make it symmetric
-            Mk[i_] += Mk[i_].T
-            Mk[i_, range(data.shape[0]), range(
-                data.shape[0])] = 1  # always with self
+            Mk[i_] /= Is + 1e-8  # consensus matrix
+            Mk[i_] += Mk[i_].T  # Mk[i_] is upper triangular (with zeros on diagonal), we now make it symmetric
+            Mk[i_] += np.eye(N)
+            # Mk[i_, range(N), range(N)] = 1  # always with self, fill the diag
             Is.fill(0)  # reset counter
         self.Mk = Mk
+
         # fits areas under the CDFs
-        self.Ak = np.zeros(self.K_-self.L_)
+        self.Ak = np.zeros(self.K_ - self.L_)
         for i, m in enumerate(Mk):
             hist, bins = np.histogram(m.ravel(), density=True)
-            self.Ak[i] = np.sum(h*(b-a)
-                             for b, a, h in zip(bins[1:], bins[:-1], np.cumsum(hist)))
+            self.Ak[i] = np.sum(h * (b - a)
+                                for b, a, h in zip(bins[1:], bins[:-1], np.cumsum(hist)))
+
         # fits differences between areas under CDFs
-        self.deltaK = np.array([(Ab-Aa)/Aa if i > 2 else Aa
-                                for Ab, Aa, i in zip(self.Ak[1:], self.Ak[:-1], range(self.L_, self.K_-1))])
+        self.deltaK = np.array([(Ab - Aa) / Aa if i > 2 else Aa
+                                for Ab, Aa, i in zip(self.Ak[1:], self.Ak[:-1], range(self.L_, self.K_ - 1))])
         self.bestK = np.argmax(self.deltaK) + \
-            self.L_ if self.deltaK.size > 0 else self.L_
+                     self.L_ if self.deltaK.size > 0 else self.L_
 
     def predict(self):
         """
@@ -108,7 +112,7 @@ class ConsensusCluster:
         """
         assert self.Mk is not None, "First run fit"
         return self.cluster_(n_clusters=self.bestK).fit_predict(
-            1-self.Mk[self.bestK-self.L_])
+            1 - self.Mk[self.bestK - self.L_])
 
     def predict_data(self, data):
         """
@@ -122,7 +126,8 @@ class ConsensusCluster:
 
 
 if __name__ == "__main__":
-    data, _ = datasets.make_blobs(200, centers=2, random_state=42)
-    cls = ConsensusCluster(KMeans, 2, 10, 2)
-    cls.fit(data)
+    data, y_true = datasets.make_blobs(200, centers=2, shuffle=True, random_state=42)
+    cls = ConsensusCluster(KMeans, 2, 5, 5)
+    cls.fit(data, verbose=True)
     print(cls.predict())
+    print(y_true)
