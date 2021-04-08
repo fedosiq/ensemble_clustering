@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 import numpy as np
 from sklearn.cluster import KMeans
@@ -9,25 +10,25 @@ from monti import ConsensusCluster
 from sklearn.metrics import silhouette_score as sil
 from sklearn.metrics import calinski_harabaz_score as ch
 from sklearn.metrics import accuracy_score
-from metrics import gd41, os
+from metrics import gd41, os_score
 
 from sklearn import datasets
 
 
-def with_metrics(test, n_runs=10):
+def with_metrics(test, n_runs=5):
     def wrapper(*args):
         cvis = []
         accs = []
         for _ in range(n_runs):
             X, labels, y = test(*args)
 
-            cvis.append([metric(X, labels) for metric in [sil, ch, gd41, os]])
+            cvis.append([metric(X, labels) for metric in [sil, ch, gd41, os_score]])
 
-            if y is not None:
-                acc = accuracy_score(y, labels)
-                accs.append(acc)
-            else:
-                acc = None
+            # if y is not None:
+            #     acc = accuracy_score(y, labels)
+            #     accs.append(acc)
+            # else:
+            #     acc = None
 
         averaged_cvis = np.array(cvis).mean(axis=0)
         print(averaged_cvis)
@@ -77,35 +78,58 @@ def run_lwea(X, n_clusters, y=None):
 
 
 @with_metrics
-def run_monti(X, n_clusters, y=None):
-    monti = ConsensusCluster(KMeans, 2, K=n_clusters, H=2)
+def run_monti(X, L, n_clusters, H=10, proportion=0.5,  y=None):
+    monti = ConsensusCluster(KMeans, L, K=n_clusters, H=H, resample_proportion=proportion)
     monti.fit(X)
     labels = monti.predict()
     return X, labels, y
 
 
-if __name__ == '__main__':
-    datasets = [(*datasets.make_blobs(200, centers=2, shuffle=False, random_state=42), 2),
-                (*datasets.make_blobs(200, centers=3, shuffle=False, random_state=42), 3),
-                (*datasets.make_blobs(200, centers=4, shuffle=False, random_state=42), 4),
-                (*datasets.make_blobs(200, n_features=3, centers=2, shuffle=False, random_state=12), 2),
-                (*datasets.make_blobs(200, n_features=3, centers=3, shuffle=False, random_state=12), 3),
-                (*datasets.make_moons(200, shuffle=False, noise=0.03), 2),
+def synthetic_test():
+    scores = {"k-means": [], "mv": [], "lwea": [], "monti": [], "monti_fixed": []}
 
-                (*datasets.load_iris(True), 3),
-                (pd.read_csv("../data/country.csv").values, None, 4),
-                (pd.read_csv("../data/wine.csv").values, None, 3)]
+    for k in range(2, 10):
+        for n_features in range(2, 10):
+            # for _ in range(10):
+            X, y = datasets.make_blobs(50*k, centers=k)
+            scores["k-means"].append(run_k_means(X, k, y))
+            scores["mv"].append(run_mv(X, y))
+            scores["lwea"].append(run_lwea(X, k, y))
+            scores["monti"].append(run_monti(X, 2, k + 5, 50, 0.8, y))
+            scores["monti_fixed"].append(run_monti(X, k, k + 1, 50, 0.8))
+            print()
 
-    scores = {"k-means": [], "mv": [], "lwea": [], "monti": []}
+    scores = pd.DataFrame(scores)
+    print(scores)
+    print(scores.sum() / len(scores))
+    scores.to_csv("synt_scores.csv")
 
-    for X, y, k in datasets:
-        scores["k-means"].append(run_k_means(X, k, y))
-        scores["mv"].append(run_mv(X, y))
-        scores["lwea"].append(run_lwea(X, k, y))
-        scores["monti"].append(run_monti(X, k + 2, y))
+
+def test():
+    data = []
+    fnames = os.listdir("../data/with_class")
+    for fname in fnames:
+        df = pd.read_csv(f"../data/with_class/{fname}")
+        n_clusters = len(np.unique(df.iloc[:, -1]))
+        data.append((df.iloc[:, :-1].values, n_clusters))
+
+    scores = {"k-means": [],
+              # "mv": [],
+              "lwea": [], "monti": [], "monti_fixed": []}
+
+    for X, k in data:
+        scores["k-means"].append(run_k_means(X, k))
+        # scores["mv"].append(run_mv(X))
+        scores["lwea"].append(run_lwea(X, k))
+        scores["monti"].append(run_monti(X, 2, k + 5))
+        scores["monti_fixed"].append(run_monti(X, k, k + 1))
         print()
 
     scores = pd.DataFrame(scores)
     print(scores)
     print(scores.sum() / len(scores))
     scores.to_csv("scores.csv")
+
+
+if __name__ == '__main__':
+    synthetic_test()

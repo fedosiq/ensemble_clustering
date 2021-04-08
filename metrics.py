@@ -2,6 +2,7 @@ import numpy as np
 from util import *
 import sys
 
+
 def dunn(X: np.array, labels: np.array):
     ks = np.unique(labels)
     k_list = [X[labels == k] for k in ks]
@@ -45,7 +46,7 @@ def gd41(X, labels):
     return minimum_dif_c / maximum_same_c
 
 
-def os(X, labels):
+def os_score(X, labels):
     n_clusters = len(np.unique(labels))
     centroids = cluster_centroid(X, labels, n_clusters)
     cluster_sizes = count_cluster_sizes(labels, n_clusters)
