@@ -4,6 +4,7 @@ import bisect
 
 from sklearn.cluster import KMeans
 from sklearn import datasets
+from sklearn.cluster import AgglomerativeClustering
 
 
 class ConsensusCluster:
@@ -113,6 +114,13 @@ class ConsensusCluster:
         assert self.Mk is not None, "First run fit"
         return self.cluster_(n_clusters=self.bestK).fit_predict(
             1 - self.Mk[self.bestK - self.L_])
+
+    def predict_hierarchical(self):
+        assert self.Mk is not None, "First run fit"
+        cls = AgglomerativeClustering(n_clusters=self.bestK, linkage="complete", affinity='precomputed').fit(
+            1 - self.Mk[self.bestK - self.L_]
+        )
+        return cls.labels_
 
     def predict_data(self, data):
         """
