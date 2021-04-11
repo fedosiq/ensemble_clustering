@@ -9,7 +9,6 @@ from monti import ConsensusCluster
 
 from sklearn.metrics import silhouette_score as sil
 from sklearn.metrics import calinski_harabaz_score as ch
-from sklearn.metrics import accuracy_score
 from metrics import gd41, os_score
 
 from sklearn import datasets
@@ -68,7 +67,7 @@ def run_mv(X, y=None):
 
 @with_metrics
 def run_lwea(X, n_clusters, y=None):
-    labels_ensemble = np.array([KMeans(n_clusters=5).fit_predict(X) for _ in range(20)])
+    labels_ensemble = np.array([KMeans(n_clusters).fit_predict(X) for _ in range(20)])
     bcs, segments = LWEA.get_all_segs(labels_ensemble.T)
     ECI = LWEA.compute_ECI(bcs, segments)
     ca = LWEA.compute_LWCA(segments, ECI, bcs.shape[1])
@@ -78,38 +77,61 @@ def run_lwea(X, n_clusters, y=None):
 
 
 @with_metrics
-def run_monti(X, L, n_clusters, H=10, proportion=0.5,  y=None):
+def run_monti(X, L, n_clusters, H=10, proportion=0.5, y=None):
     monti = ConsensusCluster(KMeans, L, K=n_clusters, H=H, resample_proportion=proportion)
     monti.fit(X)
     labels = monti.predict()
     return X, labels, y
 
 
-def synthetic_test():
-    scores = {"k-means": [], "mv": [], "lwea": [], "monti": [], "monti_fixed": []}
+@with_metrics
+def run_monti_hierarchical(X, L, n_clusters, H=10, proportion=0.5, y=None):
+    monti = ConsensusCluster(KMeans, L, K=n_clusters, H=H, resample_proportion=proportion)
+    monti.fit(X)
+    labels = monti.predict_hierarchical()
+    return X, labels, y
 
-    for k in range(2, 10):
-        for n_features in range(2, 10):
+
+def synthetic_test():
+    scores = {"k-means": [], "mv": [], "lwea": [], "monti": [],
+              "monti_fixed": [], "monti_hierarchical": []
+              }
+    clusters = range(2, 10)
+    features = range(2, 10)
+    i = 0
+
+    for k in clusters:
+        for n_features in features:
             # for _ in range(10):
-            X, y = datasets.make_blobs(50*k, centers=k)
-            scores["k-means"].append(run_k_means(X, k, y))
-            scores["mv"].append(run_mv(X, y))
-            scores["lwea"].append(run_lwea(X, k, y))
-            scores["monti"].append(run_monti(X, 2, k + 5, 50, 0.8, y))
-            scores["monti_fixed"].append(run_monti(X, k, k + 1, 50, 0.8))
+            print(f"dataset {i + 1} of {len(clusters) * len(features)}")
+
+            X, y = datasets.make_blobs(50 * k, centers=k, n_features=n_features)
+            try:
+                scores["k-means"].append(run_k_means(X, k, y))
+                scores["mv"].append(run_mv(X, y))
+                scores["lwea"].append(run_lwea(X, k, y))
+                scores["monti"].append(run_monti(X, 2, k + 5, 50, 0.8, y))
+                scores["monti_fixed"].append(run_monti(X, k, k + 1, 50, 0.8))
+                scores["monti_hierarchical"].append(run_monti(X, 2, k + 5, 50, 0.8))
+            except:
+                print(f"problem dataset {i + 1}")
+                pass
+
+            i += 1
             print()
 
     scores = pd.DataFrame(scores)
     print(scores)
     print(scores.sum() / len(scores))
-    scores.to_csv("synt_scores.csv")
+    scores.to_csv("synt_scores1.csv", index=False)
 
 
 def test():
+    data_path = "../data/with_class"
     data = []
-    fnames = os.listdir("../data/with_class")
+    fnames = os.listdir(data_path)
     for fname in fnames:
-        df = pd.read_csv(f"../data/with_class/{fname}")
+        df = pd.read_csv(f"{data_path}/{fname}")
         n_clusters = len(np.unique(df.iloc[:, -1]))
         data.append((df.iloc[:, :-1].values, n_clusters))
 
@@ -117,19 +139,21 @@ def test():
               # "mv": [],
               "lwea": [], "monti": [], "monti_fixed": []}
 
-    for X, k in data:
+    for i, (X, k) in enumerate(data):
+        print(f"dataset {i + 1} of {len(data)}")
         scores["k-means"].append(run_k_means(X, k))
         # scores["mv"].append(run_mv(X))
         scores["lwea"].append(run_lwea(X, k))
-        scores["monti"].append(run_monti(X, 2, k + 5))
-        scores["monti_fixed"].append(run_monti(X, k, k + 1))
+        scores["monti"].append(run_monti(X, 2, k + 5, 50, 0.8))
+        scores["monti_fixed"].append(run_monti(X, k, k + 1, 50, 0.8))
         print()
 
     scores = pd.DataFrame(scores)
     print(scores)
     print(scores.sum() / len(scores))
-    scores.to_csv("scores.csv")
+    scores.to_csv("scores1.csv", index=False)
 
 
 if __name__ == '__main__':
     synthetic_test()
+    # test()
