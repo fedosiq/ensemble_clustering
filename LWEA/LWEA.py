@@ -70,9 +70,9 @@ def compute_LWCA(base_clusterings_segments: np.array, ECI, M):
 
 
 def LWEA(similarity_matrix: np.array, k):
-    X = np.ones(similarity_matrix.shape) - similarity_matrix
+    X = 1 - similarity_matrix
 
-    model = AgglomerativeClustering(n_clusters=k, linkage="average").fit(X)
+    model = AgglomerativeClustering(n_clusters=k, linkage="complete", affinity='precomputed').fit(X)
     return model.labels_
 
 
