@@ -77,7 +77,7 @@ def run_lwea_known_n_clusters(X, n_clusters, y=None):
 
 
 @with_metrics
-def run_lwea(X, n_clusters, y=None):
+def run_lwea(X, y=None):
     labels_ensemble = np.array([KMeans().fit_predict(X) for _ in range(20)])
     bcs, segments = LWEA.get_all_segs(labels_ensemble.T)
     ECI = LWEA.compute_ECI(bcs, segments)

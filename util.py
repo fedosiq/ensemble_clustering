@@ -1,6 +1,7 @@
 import numpy as np
 import math
 import heapq
+from sklearn import datasets
 
 
 def cluster_centroid(X, labels, n_clusters):
@@ -91,3 +92,15 @@ def big_delta(ci):
             values[i, j] = np.linalg.norm(ci[i] - ci[j])
 
     return np.max(values)
+
+
+def make_synthetic_datasets():
+    clusters = range(2, 10)
+    features = range(2, 10)
+
+    data = []
+    for k in clusters:
+        for n_features in features:
+            X, _ = datasets.make_blobs(50 * k, centers=k, n_features=n_features)
+            data.append((X, k))
+    return data
