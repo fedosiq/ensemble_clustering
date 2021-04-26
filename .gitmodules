@@ -1,0 +1,3 @@
+[submodule "MultiClustering"]
+	path = MultiClustering
+	url = https://github.com/valeryefimova/MultiClustering.git
