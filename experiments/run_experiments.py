@@ -36,7 +36,6 @@ def run_hpo(X, seed, metric, output_file):
 
     algo_e = mab_solver.action
 
-    # print(algo_e.best_param)
     print(f"{metric} {algo_e.best_val}")
 
     return algo_e.best_algo, algo_e.best_param
@@ -89,6 +88,7 @@ def test(data, output_fname):
             cl = call_algo(alg, conf)
 
             scores["k-means"].append(run_k_means(X, k))
+
             scores["mv"].append(run_mv(X))
             scores["lwea"].append(run_lwea(X))
             scores["monti"].append(run_monti(X, 2, k + 5, 50, 0.8))
@@ -120,5 +120,4 @@ if __name__ == '__main__':
     synthetic_data = util.make_synthetic_datasets()
 
     test(synthetic_data, "synth_test.csv")
-    # pretuned_synthetic_test()
-    # test()
+    test(real_data, "real_test.csv")
