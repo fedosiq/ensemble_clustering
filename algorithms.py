@@ -5,13 +5,11 @@ from sklearn.cluster import KMeans
 import openensembles as oe
 from LWEA import LWEA
 from monti import ConsensusCluster
+from majority_voting import mv
 
 from sklearn.metrics import silhouette_score as sil
 from sklearn.metrics import calinski_harabaz_score as ch
 from metrics import gd41, os_score
-
-from scipy.spatial.distance import pdist, squareform
-from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
 
 
 def with_metrics(test, n_runs=5):
@@ -45,7 +43,14 @@ def run_k_means(X, n_clusters, y=None):
 
 
 @with_metrics
+def run_mv(X, y=None):
+    labels = mv(X, 100)
+    return X, labels, y
+
+
+@with_metrics
 def run_mv_oe(X, y=None):
+    """Deprecated"""
     n_features = X.shape[1]
     columns = [f"x{i}" for i in range(n_features)]
 
@@ -67,41 +72,20 @@ def run_mv_oe(X, y=None):
 
 @with_metrics
 def run_lwea_known_n_clusters(X, n_clusters, y=None):
-    labels_ensemble = np.array([KMeans(n_clusters).fit_predict(X) for _ in range(20)])
-    bcs, segments = LWEA.get_all_segs(labels_ensemble.T)
-    ECI = LWEA.compute_ECI(bcs, segments)
-    ca = LWEA.compute_LWCA(segments, ECI, bcs.shape[1])
-    labels = LWEA.LWEA(ca, n_clusters)
-
+    labels = LWEA.lwea(KMeans(n_clusters), X, n_clusters=n_clusters)
     return X, labels, y
 
 
 @with_metrics
 def run_lwea(X, y=None):
-    labels_ensemble = np.array([KMeans().fit_predict(X) for _ in range(20)])
-    bcs, segments = LWEA.get_all_segs(labels_ensemble.T)
-    ECI = LWEA.compute_ECI(bcs, segments)
-    ca = LWEA.compute_LWCA(segments, ECI, bcs.shape[1])
-    labels = LWEA.LWEA(ca, 2)
-
+    labels = LWEA.lwea(KMeans(), X)
     return X, labels, y
 
 
 @with_metrics
 def run_lwea_tuned(X, alg, n_clusters, y=None):
-    alg.fit(X)
-    if hasattr(alg, 'predict'):
-        labels_ensemble = np.array([alg.predict(X) for _ in range(20)])
-    else:
-        labels_ensemble = np.array([alg.labels_ for _ in range(20)])
-
-    bcs, segments = LWEA.get_all_segs(labels_ensemble.T)
-    ECI = LWEA.compute_ECI(bcs, segments)
-    ca = LWEA.compute_LWCA(segments, ECI, bcs.shape[1])
-    labels = LWEA.LWEA(ca, n_clusters)
-
+    labels = LWEA.lwea(alg, X, n_clusters=n_clusters)
     return X, labels, y
-
 
 
 @with_metrics
@@ -121,41 +105,8 @@ def run_monti_hierarchical(X, L, n_clusters, H=10, proportion=0.5, y=None):
 
 
 @with_metrics
-# TODO: remove L, K as they make no difference with tuning
 def run_monti_tuned(X, alg, L, n_clusters, H=10, proportion=0.5, y=None):
     monti = ConsensusCluster(alg, L, K=n_clusters, H=H, resample_proportion=proportion)
     monti.fit_from_cfg(X)
     labels = monti.predict_from_tuned()
-    return X, labels, y
-
-
-
-def CA(base_partitions: np.array):
-    N = base_partitions.shape[1]
-    ca = np.zeros((N, N))
-    for partition in base_partitions:
-        for i, l1 in enumerate(partition):
-            for j, l2 in enumerate(partition):
-                if l1 == l2:
-                    ca[i][j] += 1
-
-    return 1 / len(base_partitions) * ca
-
-
-def mv(X, n_base_partitions=30, n_base_clusters=15):
-    base = [KMeans(n_clusters=n_base_clusters, init='random', n_init=1).fit_predict(X) for _ in
-            range(n_base_partitions)]
-
-    ca = CA(np.array(base))
-    dist = 1 - ca
-
-    labels = fcluster(linkage(squareform(dist), 'single'), 0.5, 'distance')
-    labels -= 1
-
-    return labels
-
-
-@with_metrics
-def run_mv(X, y=None):
-    labels = mv(X, 100)
     return X, labels, y

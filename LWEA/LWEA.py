@@ -69,11 +69,25 @@ def compute_LWCA(base_clusterings_segments: np.array, ECI, M):
     return LWCA
 
 
-def LWEA(similarity_matrix: np.array, k):
+def get_consensus_partition(similarity_matrix: np.array, k):
     X = 1 - similarity_matrix
 
     model = AgglomerativeClustering(n_clusters=k, linkage="complete", affinity='precomputed').fit(X)
     return model.labels_
+
+
+def lwea(alg, X, n_partitions=20, n_clusters=2, theta=0.5, y=None):
+    alg.fit(X)
+    if hasattr(alg, 'predict'):
+        labels_ensemble = np.array([alg.predict(X) for _ in range(n_partitions)])
+    else:
+        labels_ensemble = np.array([alg.labels_ for _ in range(n_partitions)])
+
+    bcs, segments = get_all_segs(labels_ensemble.T)
+    ECI = compute_ECI(bcs, segments, theta)
+    ca = compute_LWCA(segments, ECI, bcs.shape[1])
+    labels = get_consensus_partition(ca, n_clusters)
+    return labels
 
 
 if __name__ == '__main__':
@@ -89,4 +103,4 @@ if __name__ == '__main__':
     print(ECI)
     ca = compute_LWCA(segments, ECI, bcs.shape[1])
     print(ca)
-    print(LWEA(ca, 3))
+    print(get_consensus_partition(ca, 3))
