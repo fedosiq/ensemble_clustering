@@ -13,6 +13,7 @@ from MultiClustering.RLrfAlgoEx import RLrfrsAlgoEx
 from MultiClustering.mab_solvers.UCB_SRSU import UCBsrsu
 
 import warnings
+import traceback
 
 warnings.filterwarnings("ignore")
 
@@ -75,6 +76,8 @@ def test(data, output_fname):
               "lwea": [],
               "monti": [],
 
+              "mv_tuned": [],
+              "resampled_mv_tuned": [],
               "lwea_tuned": [],
               "monti_tuned": [],
               }
@@ -87,17 +90,29 @@ def test(data, output_fname):
             print(alg, conf)
             cl = call_algo(alg, conf)
 
-            scores["k-means"].append(run_k_means(X, k))
+            k_means = run_k_means(X, k)
+            m_voting = run_mv(X)
+            lwea = run_lwea(X)
+            monti = run_monti(X, 2, k + 5, 50, 0.8)
+            mv_tuned = run_mv_tuned(X, cl)
+            resampled_mv_tuned = run_resampled_mv_tuned(X, cl)
+            lwea_tuned = run_lwea_tuned(X, cl, k)
+            monti_tuned = run_monti_tuned(X, cl, 2, 10, 50, 0.8)
 
-            scores["mv"].append(run_mv(X))
-            scores["lwea"].append(run_lwea(X))
-            scores["monti"].append(run_monti(X, 2, k + 5, 50, 0.8))
+            scores["k-means"].append(k_means)
 
-            scores["lwea_tuned"].append(run_lwea_tuned(X, cl, k))
-            scores["monti_tuned"].append(run_monti_tuned(X, cl, 2, 10, 50, 0.8))
+            scores["mv"].append(m_voting)
+            scores["lwea"].append(lwea)
+            scores["monti"].append(monti)
+
+            scores["mv_tuned"].append(mv_tuned)
+            scores["resampled_mv_tuned"].append(resampled_mv_tuned)
+            scores["lwea_tuned"].append(lwea_tuned)
+            scores["monti_tuned"].append(monti_tuned)
 
         except Exception as e:
             print(f"problem dataset {i + 1}: {e}")
+            traceback.print_exc()
             pass
 
         print()
@@ -109,15 +124,11 @@ def test(data, output_fname):
 
 
 if __name__ == '__main__':
-    data_path = "../data/with_class"
-    real_data = []
-    fnames = os.listdir(data_path)
-    for fname in fnames:
-        df = pd.read_csv(f"{data_path}/{fname}")
-        n_clusters = len(np.unique(df.iloc[:, -1]))
-        real_data.append((df.iloc[:, :-1].values, n_clusters))
+    real_data_path = "../data/with_class"
+    synth_data_path = "../data/synthetic"
 
-    synthetic_data = util.make_synthetic_datasets()
+    real_data = util.read_data(real_data_path)
+    synthetic_data = util.read_data(synth_data_path)
 
     test(synthetic_data, "synth_test.csv")
     test(real_data, "real_test.csv")

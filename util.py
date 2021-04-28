@@ -1,4 +1,6 @@
+import os
 import numpy as np
+import pandas as pd
 import math
 import heapq
 from sklearn import datasets
@@ -103,4 +105,15 @@ def make_synthetic_datasets():
         for n_features in features:
             X, _ = datasets.make_blobs(50 * k, centers=k, n_features=n_features)
             data.append((X, k))
+    return data
+
+
+def read_data(path):
+    """Returns list of (dataset, n_clusters)"""
+    data = []
+    fnames = os.listdir(path)
+    for fname in fnames:
+        df = pd.read_csv(f"{path}/{fname}")
+        n_clusters = len(np.unique(df.iloc[:, -1]))
+        data.append((df.iloc[:, :-1].values, n_clusters))
     return data

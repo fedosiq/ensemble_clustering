@@ -5,7 +5,7 @@ from sklearn.cluster import KMeans
 import openensembles as oe
 from LWEA import LWEA
 from monti import ConsensusCluster
-from majority_voting import mv
+from majority_voting import mv, resampled_mv
 
 from sklearn.metrics import silhouette_score as sil
 from sklearn.metrics import calinski_harabaz_score as ch
@@ -43,8 +43,20 @@ def run_k_means(X, n_clusters, y=None):
 
 
 @with_metrics
-def run_mv(X, y=None):
-    labels = mv(X, 100)
+def run_mv(X, n_base_partitions=100, y=None):
+    labels = mv(X, KMeans(n_clusters=15, init='random', n_init=1), n_base_partitions)
+    return X, labels, y
+
+
+@with_metrics
+def run_mv_tuned(X, alg, n_base_partitions=100, y=None):
+    labels = mv(X, alg, n_base_partitions)
+    return X, labels, y
+
+
+@with_metrics
+def run_resampled_mv_tuned(X, alg, n_base_partitions=100, resample_proportion=0.8, y=None):
+    labels = resampled_mv(X, alg, n_base_partitions, resample_proportion)
     return X, labels, y
 
 

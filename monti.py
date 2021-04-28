@@ -88,6 +88,7 @@ class ConsensusCluster:
                 # increment counts
                 ids_2 = np.array(list(combinations(resampled_indices, 2))).T
                 Is[ids_2[0], ids_2[1]] += 1
+            Is += Is.T
             Mk[i_] /= Is + 1e-8  # consensus matrix
             Mk[i_] += Mk[i_].T  # Mk[i_] is upper triangular (with zeros on diagonal), we now make it symmetric
             Mk[i_] += np.eye(N)
@@ -155,6 +156,7 @@ class ConsensusCluster:
             # increment counts
             ids_2 = np.array(list(combinations(resampled_indices, 2))).T
             Is[ids_2[0], ids_2[1]] += 1
+        Is += Is.T
         Mk /= Is + 1e-8  # consensus matrix
         Mk += Mk.T  # Mk[i_] is upper triangular (with zeros on diagonal), we now make it symmetric
         Mk += np.eye(N)
