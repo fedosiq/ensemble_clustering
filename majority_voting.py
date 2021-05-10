@@ -5,6 +5,7 @@ from scipy.spatial.distance import squareform
 from scipy.cluster.hierarchy import linkage, fcluster
 from itertools import combinations
 import bisect
+import random
 
 from sklearn import datasets
 
@@ -23,14 +24,26 @@ def CA(base_partitions: np.array):
 
 def mv(X, alg, n_base_partitions=30):
     base_partitions = []
-    if hasattr(alg, 'predict'):
-        for _ in range(n_base_partitions):
-            alg.fit(X)
+    for _ in range(n_base_partitions):
+        alg.fit(X)
+        if hasattr(alg, 'predict'):
             base_partitions.append(alg.predict(X))
-    else:
-        for _ in range(n_base_partitions):
-            alg.fit(X)
+        else:
             base_partitions.append(alg.labels_(X))
+
+    ca = CA(np.array(base_partitions))
+    dist = 1 - ca
+
+    labels = fcluster(linkage(squareform(dist), 'single'), 0.5, 'distance')
+    labels -= 1
+
+    return labels
+
+
+def mv_pp(X, n_base_partitions):
+    k_list = range(10, int(np.sqrt(len(X))))
+    base_partitions = [KMeans(n_clusters=random.choice(k_list), init='random', n_init=1).fit_predict(X) for _ in
+                       range(n_base_partitions)]
 
     ca = CA(np.array(base_partitions))
     dist = 1 - ca
@@ -89,8 +102,6 @@ def resampled_mv(X, alg, n_base_partitions=30, resample_proportion=0.8):
     labels = fcluster(linkage(squareform(dist), 'single'), 0.5, 'distance')
     labels -= 1
 
-    if len(np.unique(labels)) == 1:
-        print(labels)
 
     return labels
 

@@ -44,7 +44,12 @@ def run_k_means(X, n_clusters, y=None):
 
 @with_metrics
 def run_mv(X, n_base_partitions=100, y=None):
-    labels = mv(X, KMeans(n_clusters=15, init='random', n_init=1), n_base_partitions)
+    labels = mv(X, KMeans(n_clusters=int(np.sqrt(len(X))), init='random', n_init=1), n_base_partitions)
+    return X, labels, y
+
+
+def run_mv_pp(X, n_base_partitions=100, y=None):
+    labels = mv_pp(X, n_base_partitions)
     return X, labels, y
 
 
