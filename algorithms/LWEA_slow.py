@@ -64,18 +64,6 @@ def eci(labels, m_partition, n_cluster, theta=0.5) -> np.float32:
     return np.exp(-H / (theta * len(labels)))
 
 
-def CA(labels: np.array):
-    N = labels.shape[1]
-    ca = np.zeros((N, N))
-    for partition in labels:
-        for i, l1 in enumerate(partition):
-            for j, l2 in enumerate(partition):
-                if l1 == l2:
-                    ca[i][j] += 1
-
-    return 1 / len(labels) * ca
-
-
 def LWCA(labels: np.array):
     N = labels.shape[1]
     ca = np.zeros((N, N))

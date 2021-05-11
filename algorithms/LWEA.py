@@ -76,16 +76,14 @@ def get_consensus_partition(similarity_matrix: np.array, k):
     return model.labels_
 
 
-def lwea(alg, X, n_base_partitions=20, n_clusters=2, theta=0.5, y=None):
+def lwea(alg, X, n_base_partitions=20, n_clusters=2, theta=0.5):
     alg.fit(X)
     base_partitions = []
-    if hasattr(alg, 'predict'):
-        for _ in range(n_base_partitions):
-            alg.fit(X)
+    for _ in range(n_base_partitions):
+        alg.fit(X)
+        if hasattr(alg, 'predict'):
             base_partitions.append(alg.predict(X))
-    else:
-        for _ in range(n_base_partitions):
-            alg.fit(X)
+        else:
             base_partitions.append(alg.labels_(X))
 
     bcs, segments = get_all_segs(np.array(base_partitions).T)

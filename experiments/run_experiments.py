@@ -1,12 +1,13 @@
 import os
 import time
+import datetime
 import pandas as pd
 import numpy as np
 from sklearn.cluster import DBSCAN, AffinityPropagation, AgglomerativeClustering
 from sklearn.mixture import GaussianMixture, BayesianGaussianMixture
 
 import util
-from algorithms import *
+from runners import *
 
 from MultiClustering import Constants
 from MultiClustering.RLrfAlgoEx import RLrfrsAlgoEx
@@ -25,11 +26,9 @@ def run_hpo(X, seed, metric, output_file):
     algo_e = RLrfrsAlgoEx(metric, X, seed, 1, expansion=100)
     mab_solver = UCBsrsu(action=algo_e, time_limit=20)
 
-    # Random initialization:
     mab_solver.initialize(f, true_labels=None)
 
     start = time.time()
-    # RUN actual Multi-Arm:
     its = mab_solver.iterate(iterations, f)
     time_iterations = time.time() - start
 
@@ -97,6 +96,7 @@ def test(data, output_fname):
 
             k_means = run_k_means(X, k)
             # m_voting = run_mv(X, 20)
+            # m_voting_pp = run_mv_pp(X)
             eac_sl = run_eac(X, linkage_method='single')
             eac_al = run_eac(X, linkage_method='average')
             lwea = run_lwea(X)
@@ -112,6 +112,7 @@ def test(data, output_fname):
             scores["k-means"].append(k_means)
 
             # scores["mv"].append(m_voting)
+            # scores["mv_pp"].append(m_voting_pp)
             scores["eac_sl"].append(eac_sl)
             scores["eac_al"].append(eac_al)
             scores["lwea"].append(lwea)
@@ -144,5 +145,12 @@ if __name__ == '__main__':
     real_data = util.read_data(real_data_path)
     synthetic_data = util.read_data(synth_data_path)
 
-    # test(synthetic_data, "synth_test.csv")
-    test(real_data, "real_test.csv")
+    start = datetime.datetime.now()
+    print(start)
+
+    os.mkdir(f'exp{start}')
+
+    test(synthetic_data, f"exp{start}/synth_test.csv")
+    # test(real_data, f"exp{start}/real_test.csv")
+
+    print(datetime.datetime.now())

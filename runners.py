@@ -3,9 +3,10 @@ import numpy as np
 from sklearn.cluster import KMeans
 
 import openensembles as oe
-from LWEA import LWEA
-from monti import ConsensusCluster
-from majority_voting import mv, mv_pp, resampled_mv, eac
+from algorithms import LWEA
+from algorithms.monti import ConsensusCluster
+from algorithms.majority_voting import mv, mv_pp, resampled_mv
+from algorithms.EAC import eac
 
 from sklearn.metrics import silhouette_score as sil
 from sklearn.metrics import calinski_harabaz_score as ch
@@ -75,6 +76,7 @@ def run_resampled_mv_tuned(X, alg, n_base_partitions=100, resample_proportion=0.
 @with_metrics
 def run_mv_oe(X, y=None):
     """Deprecated"""
+    print("a")
     n_features = X.shape[1]
     columns = [f"x{i}" for i in range(n_features)]
 
@@ -84,12 +86,13 @@ def run_mv_oe(X, y=None):
     c = oe.cluster(dataObj)
     c_MV_arr = []
 
-    for i in range(100):
+    for i in range(30):
         name = f'kmeans_{i}'
         c.cluster('parent', 'kmeans', name, K=15, init='random', n_init=1)
         c_MV_arr.append(c.finish_majority_vote(threshold=0.5))
 
     final_labels = c_MV_arr[-1].labels['majority_vote'] - 1
+    print(len(np.unique(final_labels)))
 
     return X, final_labels, y if len(np.unique(final_labels)) > 1 else run_mv_oe(X, y)
 

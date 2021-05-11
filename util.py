@@ -6,6 +6,27 @@ import heapq
 from sklearn import datasets
 
 
+def CA(base_partitions: np.array) -> np.array:
+    """Calculates co-association matrix from ensemble of partitions"""
+    N = base_partitions.shape[1]
+    ca = np.zeros((N, N))
+    for partition in base_partitions:
+        for i, l1 in enumerate(partition):
+            for j, l2 in enumerate(partition):
+                if l1 == l2:
+                    ca[i][j] += 1
+
+    return 1 / len(base_partitions) * ca
+
+
+def resample(data, proportion):
+    """Returns resampled data with indices"""
+    resampled_indices = np.random.choice(
+        range(data.shape[0]), size=int(data.shape[0] * proportion), replace=False
+    )
+    return resampled_indices, data[resampled_indices, :]
+
+
 def cluster_centroid(X, labels, n_clusters):
     rows, colums = X.shape
     center = [[0.0] * colums] * n_clusters
