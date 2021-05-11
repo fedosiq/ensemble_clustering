@@ -40,7 +40,7 @@ def mv(X, alg, n_base_partitions=30):
     return labels
 
 
-def mv_pp(X, n_base_partitions):
+def mv_pp(X, n_base_partitions=30):
     k_list = range(10, int(np.sqrt(len(X))))
     base_partitions = [KMeans(n_clusters=random.choice(k_list), init='random', n_init=1).fit_predict(X) for _ in
                        range(n_base_partitions)]
@@ -52,6 +52,41 @@ def mv_pp(X, n_base_partitions):
     labels -= 1
 
     return labels
+
+
+def eac(X, alg=None, linkage_method='single', n_base_partitions=30):
+    base_partitions = []
+    if alg is None:
+        k_list = range(10, int(np.sqrt(len(X))))
+        base_partitions = [KMeans(n_clusters=random.choice(k_list), init='random', n_init=1).fit_predict(X) for _ in
+                           range(n_base_partitions)]
+    else:
+        for _ in range(n_base_partitions):
+            alg.fit(X)
+            if hasattr(alg, 'predict'):
+                base_partitions.append(alg.predict(X))
+            else:
+                base_partitions.append(alg.labels_(X))
+
+    ca = CA(np.array(base_partitions))
+    dist = 1 - ca
+
+    l = linkage(squareform(dist), linkage_method)
+
+    n_clusters = np.argmin(np.diff(l[-20:, -2][::-1])) + 2
+    labels = fcluster(l, n_clusters, 'maxclust')
+
+    labels -= 1
+
+    return labels
+
+
+def eac_sl(X, alg=None, n_base_partitions=30):
+    return eac(X, alg, 'single', n_base_partitions)
+
+
+def eac_al(X, alg=None, n_base_partitions=30):
+    return eac(X, alg, 'average', n_base_partitions)
 
 
 def resample(data, proportion):

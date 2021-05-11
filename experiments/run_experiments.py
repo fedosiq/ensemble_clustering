@@ -72,13 +72,18 @@ def call_algo(name, cfg):
 def test(data, output_fname):
     scores = {"k-means": [],
 
-              "mv": [],
+              # "mv": [],
+              # "mv_pp": [],
+              "eac_sl": [],
+              "eac_al": [],
               "lwea": [],
               "monti": [],
 
-              "mv_tuned": [],
-              "resampled_mv_tuned": [],
-              "lwea_tuned": [],
+              # "mv_tuned": [],
+              "eac_sl_tuned": [],
+              "eac_al_tuned": [],
+              # "resampled_mv_tuned": [],
+              # "lwea_tuned": [],
               "monti_tuned": [],
               }
 
@@ -91,23 +96,32 @@ def test(data, output_fname):
             cl = call_algo(alg, conf)
 
             k_means = run_k_means(X, k)
-            m_voting = run_mv(X)
+            # m_voting = run_mv(X, 20)
+            eac_sl = run_eac(X, linkage_method='single')
+            eac_al = run_eac(X, linkage_method='average')
             lwea = run_lwea(X)
             monti = run_monti(X, 2, k + 5, 50, 0.8)
-            mv_tuned = run_mv_tuned(X, cl)
-            resampled_mv_tuned = run_resampled_mv_tuned(X, cl)
-            lwea_tuned = run_lwea_tuned(X, cl, k)
+
+            # mv_tuned = run_mv_tuned(X, cl)
+            eac_sl_tuned = run_eac(X, alg=cl, linkage_method='single')
+            eac_al_tuned = run_eac(X, alg=cl, linkage_method='average')
+            # resampled_mv_tuned = run_resampled_mv_tuned(X, cl)
+            # lwea_tuned = run_lwea_tuned(X, cl, k)
             monti_tuned = run_monti_tuned(X, cl, 2, 10, 50, 0.8)
 
             scores["k-means"].append(k_means)
 
-            scores["mv"].append(m_voting)
+            # scores["mv"].append(m_voting)
+            scores["eac_sl"].append(eac_sl)
+            scores["eac_al"].append(eac_al)
             scores["lwea"].append(lwea)
             scores["monti"].append(monti)
 
-            scores["mv_tuned"].append(mv_tuned)
-            scores["resampled_mv_tuned"].append(resampled_mv_tuned)
-            scores["lwea_tuned"].append(lwea_tuned)
+            # scores["mv_tuned"].append(mv_tuned)
+            scores["eac_sl_tuned"].append(eac_sl_tuned)
+            scores["eac_al_tuned"].append(eac_al_tuned)
+            # scores["resampled_mv_tuned"].append(resampled_mv_tuned)
+            # scores["lwea_tuned"].append(lwea_tuned)
             scores["monti_tuned"].append(monti_tuned)
 
         except Exception as e:
@@ -130,5 +144,5 @@ if __name__ == '__main__':
     real_data = util.read_data(real_data_path)
     synthetic_data = util.read_data(synth_data_path)
 
-    test(synthetic_data, "synth_test.csv")
+    # test(synthetic_data, "synth_test.csv")
     test(real_data, "real_test.csv")

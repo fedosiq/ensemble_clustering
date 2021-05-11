@@ -5,7 +5,7 @@ from sklearn.cluster import KMeans
 import openensembles as oe
 from LWEA import LWEA
 from monti import ConsensusCluster
-from majority_voting import mv, resampled_mv
+from majority_voting import mv, mv_pp, resampled_mv, eac
 
 from sklearn.metrics import silhouette_score as sil
 from sklearn.metrics import calinski_harabaz_score as ch
@@ -13,11 +13,11 @@ from metrics import gd41, os_score
 
 
 def with_metrics(test, n_runs=5):
-    def wrapper(*args):
+    def wrapper(*args, **kwargs):
         cvis = []
         accs = []
         for _ in range(n_runs):
-            X, labels, y = test(*args)
+            X, labels, y = test(*args, **kwargs)
 
             cvis.append([metric(X, labels) for metric in [sil, ch, gd41, os_score]])
 
@@ -48,8 +48,15 @@ def run_mv(X, n_base_partitions=100, y=None):
     return X, labels, y
 
 
+@with_metrics
 def run_mv_pp(X, n_base_partitions=100, y=None):
     labels = mv_pp(X, n_base_partitions)
+    return X, labels, y
+
+
+@with_metrics
+def run_eac(X, alg=None, linkage_method='single', n_base_partitions=100, y=None):
+    labels = eac(X, alg, linkage_method=linkage_method, n_base_partitions=n_base_partitions)
     return X, labels, y
 
 
