@@ -160,7 +160,7 @@ class ConsensusCluster:
         labels = []
 
         for k in range(self.L_, self.K_):
-            cls = AgglomerativeClustering(n_clusters=k, linkage='complete', affinity='precomputed').fit(1 - self.Mk)
+            cls = AgglomerativeClustering(n_clusters=k, linkage='average', affinity='precomputed').fit(1 - self.Mk)
 
             ls = cls.labels_
             labels.append(ls)

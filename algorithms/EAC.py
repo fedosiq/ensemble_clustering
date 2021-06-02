@@ -10,7 +10,7 @@ from util import CA
 def eac(X, alg=None, linkage_method='single', n_base_partitions=30):
     base_partitions = []
     if alg is None:
-        k_list = range(10, int(np.sqrt(len(X))))
+        k_list = range(10, int(np.sqrt(len(X)))) if int(np.sqrt(len(X))) > 10 else [10]
         base_partitions = [KMeans(n_clusters=random.choice(k_list), init='random', n_init=1).fit_predict(X) for _ in
                            range(n_base_partitions)]
     else:
@@ -19,7 +19,7 @@ def eac(X, alg=None, linkage_method='single', n_base_partitions=30):
             if hasattr(alg, 'predict'):
                 base_partitions.append(alg.predict(X))
             else:
-                base_partitions.append(alg.labels_(X))
+                base_partitions.append(alg.labels_)
 
     ca = CA(np.array(base_partitions))
     dist = 1 - ca

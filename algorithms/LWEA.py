@@ -106,4 +106,5 @@ if __name__ == '__main__':
     print(ECI)
     ca = compute_LWCA(segments, ECI, bcs.shape[1])
     print(ca)
+    print("diag", np.diag(ca))
     print(get_consensus_partition(ca, 3))

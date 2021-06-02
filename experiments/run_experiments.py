@@ -13,6 +13,8 @@ from MultiClustering import Constants
 from MultiClustering.RLrfAlgoEx import RLrfrsAlgoEx
 from MultiClustering.mab_solvers.UCB_SRSU import UCBsrsu
 
+from report import make_report
+
 import warnings
 import traceback
 
@@ -24,7 +26,7 @@ def run_hpo(X, seed, metric, output_file):
     f = open(file=output_file, mode='a')
 
     algo_e = RLrfrsAlgoEx(metric, X, seed, 1, expansion=100)
-    mab_solver = UCBsrsu(action=algo_e, time_limit=20)
+    mab_solver = UCBsrsu(action=algo_e, time_limit=120)
 
     mab_solver.initialize(f, true_labels=None)
 
@@ -69,22 +71,22 @@ def call_algo(name, cfg):
 
 
 def test(data, output_fname):
-    scores = {"k-means": [],
+    scores = {
+        "k-means": [],
 
-              # "mv": [],
-              # "mv_pp": [],
-              "eac_sl": [],
-              "eac_al": [],
-              "lwea": [],
-              "monti": [],
+        # "mv": [],
+        # "mv_pp": [],
+        "eac_sl": [],
+        "eac_al": [],
+        "lwea": [],
+        "monti": [],
 
-              # "mv_tuned": [],
-              "eac_sl_tuned": [],
-              "eac_al_tuned": [],
-              # "resampled_mv_tuned": [],
-              # "lwea_tuned": [],
-              "monti_tuned": [],
-              }
+        # "mv_tuned": [],
+        "eac_sl_tuned": [],
+        "eac_al_tuned": [],
+        # "resampled_mv_tuned": [],
+        "monti_tuned": []
+    }
 
     for i, (X, k) in enumerate(data):
         print(f"dataset {i + 1} of {len(data)}")
@@ -95,24 +97,21 @@ def test(data, output_fname):
             cl = call_algo(alg, conf)
 
             k_means = run_k_means(X, k)
-            # m_voting = run_mv(X, 20)
-            # m_voting_pp = run_mv_pp(X)
+            # m_voting = run_mv(X, 30)
             eac_sl = run_eac(X, linkage_method='single')
             eac_al = run_eac(X, linkage_method='average')
             lwea = run_lwea(X)
-            monti = run_monti(X, 2, k + 5, 50, 0.8)
+            monti = run_monti_hierarchical(X, 2, 13, 20, 0.7)
 
             # mv_tuned = run_mv_tuned(X, cl)
             eac_sl_tuned = run_eac(X, alg=cl, linkage_method='single')
             eac_al_tuned = run_eac(X, alg=cl, linkage_method='average')
             # resampled_mv_tuned = run_resampled_mv_tuned(X, cl)
-            # lwea_tuned = run_lwea_tuned(X, cl, k)
-            monti_tuned = run_monti_tuned(X, cl, 2, 10, 50, 0.8)
+            monti_tuned = run_monti_tuned(X, cl, 2, 10, 100, 0.8)
 
             scores["k-means"].append(k_means)
 
             # scores["mv"].append(m_voting)
-            # scores["mv_pp"].append(m_voting_pp)
             scores["eac_sl"].append(eac_sl)
             scores["eac_al"].append(eac_al)
             scores["lwea"].append(lwea)
@@ -122,7 +121,6 @@ def test(data, output_fname):
             scores["eac_sl_tuned"].append(eac_sl_tuned)
             scores["eac_al_tuned"].append(eac_al_tuned)
             # scores["resampled_mv_tuned"].append(resampled_mv_tuned)
-            # scores["lwea_tuned"].append(lwea_tuned)
             scores["monti_tuned"].append(monti_tuned)
 
         except Exception as e:
@@ -151,6 +149,7 @@ if __name__ == '__main__':
     os.mkdir(f'exp{start}')
 
     test(synthetic_data, f"exp{start}/synth_test.csv")
-    # test(real_data, f"exp{start}/real_test.csv")
-
+    test(real_data, f"exp{start}/real_test.csv")
     print(datetime.datetime.now())
+
+    make_report(f'exp{start}')

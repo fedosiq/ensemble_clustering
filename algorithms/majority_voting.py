@@ -37,7 +37,7 @@ def mv(X, alg, n_base_partitions=30):
 
 def mv_pp(X, n_base_partitions=30):
     """Majority Voting with random numbers of clusters in the interval [10, sqrt(n_samples)]"""
-    k_list = range(10, int(np.sqrt(len(X))))
+    k_list = range(10, int(np.sqrt(len(X)))) if int(np.sqrt(len(X))) > 10 else [10]
     base_partitions = [KMeans(n_clusters=random.choice(k_list), init='random', n_init=1).fit_predict(X) for _ in
                        range(n_base_partitions)]
 

@@ -38,8 +38,7 @@ def with_metrics(test, n_runs=5):
 
 @with_metrics
 def run_k_means(X, n_clusters, y=None):
-    kmeans = KMeans(n_clusters)
-    labels = kmeans.fit_predict(X)
+    labels = KMeans(n_clusters).fit_predict(X)
     return X, labels, y
 
 
